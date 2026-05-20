@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Focus Tasks">
+<meta name="theme-color" content="#f5f0e8">
+<title>Focus Tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f0e8;
+  --surface:#fffdf8;
+  --surface2:#f0ebe0;
+  --surface3:#e8e2d6;
+  --border:#ddd6c8;
+  --border2:#c8bfae;
+  --text:#1c1814;
+  --text2:#6b6158;
+  --text3:#a09488;
+  --ink:#3a3028;
+  --red:#c0392b;--red-bg:#fdf3f0;--red-border:#f2c4bc;--red-light:#e8a89e;
+  --blue:#1a5fa8;--blue-bg:#edf3fc;--blue-border:#b8cef0;--blue-light:#8fb8e8;
+  --amber:#9a6200;--amber-bg:#fdf6e3;--amber-border:#e8d090;--amber-light:#d4a84a;
+  --green:#2d6a3f;--green-bg:#edf7f0;--green-border:#a8d8b8;
+  --muted:#8a8278;--muted-bg:#f0ebe0;--muted-border:#c8bfae;
+  --accent:#4a7c59;
+  --shadow-sm:0 1px 3px rgba(60,40,20,.08);
+  --shadow:0 2px 8px rgba(60,40,20,.1),0 1px 3px rgba(60,40,20,.06);
+  --shadow-lg:0 8px 24px rgba(60,40,20,.14),0 2px 8px rgba(60,40,20,.08);
+  --r:10px;--r-lg:14px;
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%;min-height:100%}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55}
+
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:720px;margin:0 auto;padding:0 16px 80px}
+
+/* HEADER */
+.header{padding:28px 0 20px;text-align:center}
+.header-logo{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--ink);letter-spacing:-.5px;line-height:1}
+.header-logo span{color:var(--accent)}
+.header-sub{font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:.04em;text-transform:uppercase}
+.header-date{font-size:13px;color:var(--text2);margin-top:8px}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--r-lg);margin-bottom:20px;border:1px solid var(--border)}
+.tab{flex:1;padding:8px 6px;border:none;background:none;border-radius:calc(var(--r-lg) - 3px);font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.5)}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);font-weight:600}
+.tab-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center;line-height:1.4}
+.tab.active .tab-badge{background:var(--red)}
+
+/* ADD BAR */
+.add-bar{display:flex;gap:8px;margin-bottom:18px}
+.add-bar input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);font-family:var(--font-body);font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.add-bar input:focus{border-color:var(--accent)}
+.add-bar input::placeholder{color:var(--text3)}
+.btn{padding:9px 16px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--surface);font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:all .15s;line-height:1;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#3d6b4b;border-color:#3d6b4b;color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ADD FORM */
+.add-form{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:18px;display:none;box-shadow:var(--shadow)}
+.add-form.open{display:block;animation:slideDown .2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:7px;letter-spacing:.05em;text-transform:uppercase}
+.form-field{margin-bottom:16px}
+.form-field textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:var(--font-body);font-size:14px;color:var(--text);outline:none;resize:vertical;min-height:56px;transition:border-color .15s}
+.form-field textarea:focus{border-color:var(--accent)}
+
+/* OPTION PILLS */
+.opt-group{display:flex;gap:6px;flex-wrap:wrap}
+.opt{padding:7px 14px;border:1.5px solid var(--border);border-radius:99px;background:var(--surface);font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;line-height:1}
+.opt:hover{border-color:var(--border2);color:var(--text)}
+.opt.sel-imp-high,.opt.sel-urg-high{background:var(--red-bg);border-color:var(--red-light);color:var(--red);font-weight:600}
+.opt.sel-imp-med,.opt.sel-urg-med{background:var(--amber-bg);border-color:var(--amber-light);color:var(--amber);font-weight:600}
+.opt.sel-imp-low,.opt.sel-urg-low{background:var(--muted-bg);border-color:var(--muted-border);color:var(--muted);font-weight:600}
+
+/* REALITY CHECK PANEL */
+.reality-panel{margin-top:10px;border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.55;border:1.5px solid;animation:fadeIn .2s ease;display:none}
+.reality-panel.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.reality-panel.lvl-high{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+.reality-panel.lvl-med{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.reality-panel.lvl-low{background:var(--muted-bg);border-color:var(--muted-border);color:var(--muted)}
+.reality-what{font-weight:600;margin-bottom:4px}
+.reality-check{margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);font-size:12px;opacity:.85}
+.reality-check strong{display:block;margin-bottom:2px;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.06em;opacity:.7}
+
+/* DUE DATE ROW */
+.due-row{display:flex;gap:8px;align-items:center}
+.due-input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:var(--font-body);font-size:14px;color:var(--text);outline:none;transition:border-color .15s}
+.due-input:focus{border-color:var(--accent)}
+.due-clear{padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font-body);transition:all .15s;line-height:1}
+.due-clear:hover{color:var(--red);border-color:var(--red-border);background:var(--red-bg)}
+
+.form-divider{height:1px;background:var(--border);margin:16px 0}
+.form-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* QUADRANTS */
+.quadrant{margin-bottom:22px}
+.q-header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--r);cursor:pointer;user-select:none;transition:background .15s;margin-bottom:2px}
+.q-header:hover{background:rgba(0,0,0,.04)}
+.q-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.q-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink)}
+.q-sub{font-size:12px;color:var(--text3);font-style:italic}
+.q-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--text3);background:var(--surface2);padding:2px 8px;border-radius:99px}
+.q-arrow{font-size:12px;color:var(--text3);transition:transform .2s}
+.q-arrow.collapsed{transform:rotate(-90deg)}
+.q-body{display:flex;flex-direction:column;gap:6px;padding:0 2px}
+.q-body.hidden{display:none}
+.q-empty{padding:14px 16px;font-size:13px;color:var(--text3);font-style:italic;text-align:center;background:var(--surface2);border-radius:var(--r);border:1.5px dashed var(--border)}
+
+/* TASK CARD */
+.task-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:13px 14px;display:flex;align-items:flex-start;gap:11px;transition:all .2s;position:relative}
+.task-card:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.task-card.done{opacity:.5}
+.task-card.done .task-text{text-decoration:line-through;color:var(--text3)}
+.task-card.overdue{border-color:var(--red-border);background:var(--red-bg)}
+.task-rank{display:flex;flex-direction:column;gap:1px;flex-shrink:0;margin-top:1px}
+.rank-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:2px 3px;line-height:1;border-radius:3px;transition:all .15s}
+.rank-btn:hover{background:var(--surface2);color:var(--text)}
+.rank-btn:disabled{opacity:.2;cursor:default}
+.task-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .2s;margin-top:1px}
+.task-check:hover{border-color:var(--accent);background:var(--accent);color:#fff}
+.task-check.checked{border-color:var(--accent);background:var(--accent);color:#fff}
+.task-body{flex:1;min-width:0}
+.task-text{font-size:14px;font-weight:500;color:var(--text);line-height:1.45;margin-bottom:5px;word-wrap:break-word}
+.task-note{font-size:12px;color:var(--text2);margin-bottom:6px;font-style:italic;line-height:1.4}
+.task-pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.02em}
+.pill-imp-high{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.pill-imp-med{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.pill-imp-low{background:var(--muted-bg);color:var(--muted);border:1px solid var(--muted-border)}
+.pill-urg-high{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.pill-urg-med{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.pill-urg-low{background:var(--muted-bg);color:var(--muted);border:1px solid var(--muted-border)}
+.pill-overdue{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.pill-today{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.pill-tomorrow{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.pill-soon{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.pill-later{background:var(--muted-bg);color:var(--muted);border:1px solid var(--muted-border)}
+.pill-nodate{background:var(--muted-bg);color:var(--text3);border:1px solid var(--border)}
+.task-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:3px 5px;border-radius:5px;line-height:1;flex-shrink:0;opacity:0;transition:opacity .15s;margin-top:-2px}
+.task-card:hover .task-del{opacity:1}
+.task-del:hover{color:var(--red);background:var(--red-bg)}
+
+/* TODAY VIEW */
+.focus-header{background:linear-gradient(135deg,#2d4a38 0%,#3d6b4b 100%);border-radius:var(--r-lg);padding:22px 24px;margin-bottom:22px;color:#fff;position:relative;overflow:hidden}
+.focus-header::after{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+.focus-title{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:4px}
+.focus-sub{font-size:13px;opacity:.75}
+.focus-stat{margin-top:14px;font-size:13px;opacity:.85;font-weight:500}
+.focus-stat strong{font-size:20px;font-weight:700;font-family:var(--font-display);opacity:1;margin-right:4px}
+
+/* PLAN VIEW */
+.plan-section{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:22px}
+.plan-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.time-slots{display:flex;flex-direction:column;gap:8px}
+.time-slot{display:flex;align-items:center;gap:12px}
+.time-label{font-size:12px;font-weight:600;color:var(--text2);width:68px;flex-shrink:0;letter-spacing:.02em}
+.time-drop{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:var(--font-body);font-size:13px;color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a09488' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.time-drop:focus{border-color:var(--accent)}
+
+/* SECTION LABEL */
+.section-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;padding:0 2px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.6}
+.empty-state h3{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.empty-state p{font-size:13px;line-height:1.6;max-width:260px;margin:0 auto}
+.done-list{display:flex;flex-direction:column;gap:6px}
+
+@keyframes confettiBounce{0%{transform:scale(1)}40%{transform:scale(1.07)}70%{transform:scale(.97)}100%{transform:scale(1)}}
+.confetti-pop{animation:confettiBounce .35s cubic-bezier(.36,.07,.19,.97)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-logo">focus<span>.</span></div>
+    <div class="header-sub">ADHD-friendly task planner</div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setView('matrix')" id="tab-matrix">📋 Tasks <span class="tab-badge" id="badge-matrix">0</span></button>
+    <button class="tab" onclick="setView('today')" id="tab-today">🎯 Today <span class="tab-badge" id="badge-today">0</span></button>
+    <button class="tab" onclick="setView('plan')" id="tab-plan">📆 Plan</button>
+    <button class="tab" onclick="setView('done')" id="tab-done">✓ Done <span class="tab-badge" id="badge-done" style="background:var(--text3)">0</span></button>
+  </div>
+
+  <div class="add-bar" id="add-bar">
+    <input id="task-input" type="text" placeholder="What needs doing? Press Enter to quick-add…" maxlength="200" onkeydown="handleInputKey(event)"/>
+    <button class="btn btn-primary" onclick="toggleForm()">＋ Add</button>
+  </div>
+
+  <!-- EXPANDED FORM -->
+  <div class="add-form" id="add-form">
+
+    <div class="form-field">
+      <label class="form-label">📝 Notes (optional)</label>
+      <textarea id="task-note" placeholder="Any extra context…" rows="2"></textarea>
+    </div>
+
+    <div class="form-divider"></div>
+
+    <!-- IMPORTANCE -->
+    <div class="form-field" style="margin-bottom:0">
+      <label class="form-label">⚡ Importance — <em style="text-transform:none;font-weight:400;letter-spacing:0;font-size:11px">How much does this actually matter?</em></label>
+      <div class="opt-group">
+        <button class="opt sel-imp-high" id="imp-high" onclick="setProp('importance','high')">🔴 High</button>
+        <button class="opt" id="imp-med" onclick="setProp('importance','medium')">🟡 Medium</button>
+        <button class="opt" id="imp-low" onclick="setProp('importance','low')">⚪ Low</button>
+      </div>
+      <div class="reality-panel show lvl-high" id="imp-panel">
+        <div class="reality-what" id="imp-what"></div>
+        <div class="reality-check"><strong>Reality check ↓</strong><span id="imp-check"></span></div>
+      </div>
+    </div>
+
+    <div class="form-divider"></div>
+
+    <!-- URGENCY -->
+    <div class="form-field" style="margin-bottom:0">
+      <label class="form-label">🔥 Urgency — <em style="text-transform:none;font-weight:400;letter-spacing:0;font-size:11px">How soon does this genuinely need doing?</em></label>
+      <div class="opt-group">
+        <button class="opt sel-urg-high" id="urg-high" onclick="setProp('urgency','high')">🔴 High</button>
+        <button class="opt" id="urg-med" onclick="setProp('urgency','medium')">🟡 Medium</button>
+        <button class="opt" id="urg-low" onclick="setProp('urgency','low')">⚪ Low</button>
+      </div>
+      <div class="reality-panel show lvl-high" id="urg-panel">
+        <div class="reality-what" id="urg-what"></div>
+        <div class="reality-check"><strong>Reality check ↓</strong><span id="urg-check"></span></div>
+      </div>
+    </div>
+
+    <div class="form-divider"></div>
+
+    <!-- DUE DATE -->
+    <div class="form-field" style="margin-bottom:0">
+      <label class="form-label">📅 Due date (optional)</label>
+      <div class="due-row">
+        <input type="date" class="due-input" id="due-date-input" onchange="setProp('dueDate', this.value||null)"/>
+        <button class="due-clear" onclick="clearDue()">✕ No date</button>
+      </div>
+      <div id="due-preview" style="margin-top:8px;font-size:12px;color:var(--text3);padding-left:2px"></div>
+    </div>
+
+    <div class="form-divider"></div>
+
+    <div class="form-actions">
+      <button class="btn btn-sm" onclick="cancelForm()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitTask()">Add task →</button>
+    </div>
+  </div>
+
+  <div id="main-content"></div>
+</div>
+
+<script>
+/* ── GUIDANCE CONTENT ── */
+const IMP_GUIDE = {
+  high: {
+    what: 'Real consequences if skipped — affects a goal, a person, or a commitment.',
+    check: 'Would this still matter in 3 months?'
+  },
+  medium: {
+    what: 'Helpful but not essential. Life goes on if it\'s delayed.',
+    check: 'Is it moving you forward, or just keeping you busy?'
+  },
+  low: {
+    what: 'Nice to do. Could be dropped or delegated without much loss.',
+    check: 'Would anything actually suffer if this never happened?'
+  }
+};
+
+const URG_GUIDE = {
+  high: {
+    what: 'Hard deadline — real consequences if missed today or tomorrow.',
+    check: 'What actually happens if you wait a week?'
+  },
+  medium: {
+    what: 'Should happen this week, but a day or two of flex is fine.',
+    check: 'Is this deadline real, or one you made up?'
+  },
+  low: {
+    what: 'No deadline. Can wait without any negative consequence.',
+    check: 'Does it feel urgent, or is it actually urgent?'
+  }
+};
+
+/* ── QUADRANTS ── */
+const QUADS = [
+  { id:'q1', label:'Do First',             sub:'Urgent & Important',          dot:'var(--red)',    impCond:['high','medium'], urgCond:['high'] },
+  { id:'q2', label:'Schedule',             sub:'Important, not urgent',       dot:'var(--blue)',   impCond:['high','medium'], urgCond:['medium','low'] },
+  { id:'q3', label:'Consider Delegating',  sub:'Urgent, not important',       dot:'var(--amber)',  impCond:['low'],           urgCond:['high','medium'] },
+  { id:'q4', label:'Drop or Defer',        sub:'Neither urgent nor important', dot:'#b0a898',      impCond:['low'],           urgCond:['low'] },
+];
+
+const TIME_SLOTS = [
+  {label:'Morning',      sub:'8–10 am'},
+  {label:'Mid-morning',  sub:'10–12 pm'},
+  {label:'Lunchtime',    sub:'12–1 pm'},
+  {label:'Afternoon',    sub:'1–3 pm'},
+  {label:'Late arvo',    sub:'3–5 pm'},
+  {label:'Evening',      sub:'after 5 pm'},
+];
+
+/* ── STATE ── */
+let tasks = [];
+let collapsed = new Set();
+let view = 'matrix';
+let newTask = { importance:'high', urgency:'high', dueDate:null };
+let plan = {};
+let formOpen = false;
+
+/* ── STORAGE ── */
+function save(){localStorage.setItem('focus-tasks-v2',JSON.stringify({tasks,collapsed:[...collapsed],plan}));}
+function load(){
+  try{
+    const raw=localStorage.getItem('focus-tasks-v2')||localStorage.getItem('focus-tasks-v1');
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    tasks=d.tasks||[];
+    // migrate old dueType to dueDate
+    tasks.forEach(t=>{
+      if(!t.dueDate&&t.dueType){
+        const today=todayStr();
+        if(t.dueType==='today')t.dueDate=today;
+        // week/anytime → no date set (null)
+      }
+    });
+    collapsed=new Set(d.collapsed||[]);
+    plan=d.plan||{};
+  }catch(e){}
+}
+
+/* ── DATE UTILS ── */
+function todayStr(){
+  const d=new Date();
+  return d.toISOString().slice(0,10);
+}
+function tomorrowStr(){
+  const d=new Date();d.setDate(d.getDate()+1);
+  return d.toISOString().slice(0,10);
+}
+function endOfWeekStr(){
+  const d=new Date();
+  const day=d.getDay(); // 0=Sun
+  const diff=(7-day)%7||7;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+function isOverdue(dueDate){return dueDate&&dueDate<todayStr();}
+function isDueToday(dueDate){return dueDate===todayStr();}
+function isDueTomorrow(dueDate){return dueDate===tomorrowStr();}
+function isDueThisWeek(dueDate){return dueDate&&dueDate>todayStr()&&dueDate<=endOfWeekStr();}
+
+function formatDueLabel(dueDate){
+  if(!dueDate)return null;
+  if(isOverdue(dueDate)){
+    const d=new Date(dueDate+'T00:00:00');
+    const diff=Math.round((new Date(todayStr())-new Date(dueDate+'T00:00:00'))/(1000*60*60*24));
+    return{cls:'pill-overdue',text:`⚠️ Overdue · ${diff}d ago`};
+  }
+  if(isDueToday(dueDate))return{cls:'pill-today',text:'📅 Today'};
+  if(isDueTomorrow(dueDate))return{cls:'pill-tomorrow',text:'📅 Tomorrow'};
+  // show day name if within this week
+  const d=new Date(dueDate+'T00:00:00');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  if(isDueThisWeek(dueDate))return{cls:'pill-soon',text:`📅 ${days[d.getDay()]} ${d.getDate()}`};
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return{cls:'pill-later',text:`📅 ${d.getDate()} ${months[d.getMonth()]}`};
+}
+
+function formatDate(){
+  return new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+/* ── HELPERS ── */
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function getQuad(t){return QUADS.find(q=>q.impCond.includes(t.importance)&&q.urgCond.includes(t.urgency))||QUADS[3];}
+function pending(t){return !t.done;}
+function pendingCount(){return tasks.filter(pending).length;}
+function todayCount(){return tasks.filter(t=>pending(t)&&(isDueToday(t.dueDate)||isOverdue(t.dueDate))).length;}
+function doneCount(){return tasks.filter(t=>t.done).length;}
+
+function updateBadges(){
+  document.getElementById('badge-matrix').textContent=pendingCount();
+  document.getElementById('badge-today').textContent=todayCount();
+  document.getElementById('badge-done').textContent=doneCount();
+}
+
+/* ── VIEW ── */
+function setView(v){
+  view=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+v).classList.add('active');
+  document.getElementById('add-bar').style.display=(v==='done')?'none':'flex';
+  if(v==='done')cancelForm();
+  render();
+}
+
+/* ── FORM ── */
+function toggleForm(){
+  formOpen=!formOpen;
+  document.getElementById('add-form').classList.toggle('open',formOpen);
+  if(formOpen){
+    document.getElementById('task-input').focus();
+    // default due date to today
+    const di=document.getElementById('due-date-input');
+    if(!newTask.dueDate){di.value=todayStr();newTask.dueDate=todayStr();}
+    else di.value=newTask.dueDate;
+    refreshFormOpts();
+  }
+}
+function cancelForm(){
+  formOpen=false;
+  document.getElementById('add-form').classList.remove('open');
+  document.getElementById('task-input').value='';
+  document.getElementById('task-note').value='';
+  newTask={importance:'high',urgency:'high',dueDate:todayStr()};
+  refreshFormOpts();
+}
+function clearDue(){
+  newTask.dueDate=null;
+  document.getElementById('due-date-input').value='';
+  document.getElementById('due-preview').textContent='No due date set.';
+}
+function setProp(k,v){
+  newTask[k]=v;
+  refreshFormOpts();
+}
+function refreshFormOpts(){
+  const imp=newTask.importance, urg=newTask.urgency;
+
+  // importance buttons
+  document.getElementById('imp-high').className='opt'+(imp==='high'?' sel-imp-high':'');
+  document.getElementById('imp-med').className='opt'+(imp==='medium'?' sel-imp-med':'');
+  document.getElementById('imp-low').className='opt'+(imp==='low'?' sel-imp-low':'');
+
+  // importance panel
+  const ig=IMP_GUIDE[imp];
+  const ip=document.getElementById('imp-panel');
+  ip.className='reality-panel show lvl-'+(imp==='high'?'high':imp==='medium'?'med':'low');
+  document.getElementById('imp-what').textContent=ig.what;
+  document.getElementById('imp-check').textContent=ig.check;
+
+  // urgency buttons
+  document.getElementById('urg-high').className='opt'+(urg==='high'?' sel-urg-high':'');
+  document.getElementById('urg-med').className='opt'+(urg==='medium'?' sel-urg-med':'');
+  document.getElementById('urg-low').className='opt'+(urg==='low'?' sel-urg-low':'');
+
+  // urgency panel
+  const ug=URG_GUIDE[urg];
+  const up=document.getElementById('urg-panel');
+  up.className='reality-panel show lvl-'+(urg==='high'?'high':urg==='medium'?'med':'low');
+  document.getElementById('urg-what').textContent=ug.what;
+  document.getElementById('urg-check').textContent=ug.check;
+
+  // due preview
+  const prev=document.getElementById('due-preview');
+  if(newTask.dueDate){
+    const lbl=formatDueLabel(newTask.dueDate);
+    prev.textContent=lbl?`Due: ${lbl.text.replace(/[📅⚠️]/g,'').trim()}`:'';
+    if(isOverdue(newTask.dueDate))prev.style.color='var(--red)';
+    else prev.style.color='var(--text3)';
+  } else {
+    prev.textContent='No due date — task will appear in All Tasks view.';
+    prev.style.color='var(--text3)';
+  }
+}
+
+function handleInputKey(e){
+  if(e.key==='Enter'){if(formOpen)submitTask();else quickAdd();}
+  if(e.key==='Escape')cancelForm();
+}
+function quickAdd(){
+  const text=document.getElementById('task-input').value.trim();
+  if(!text)return;
+  tasks.push({id:uid(),text,note:'',importance:newTask.importance,urgency:newTask.urgency,dueDate:newTask.dueDate,done:false,order:tasks.length});
+  save();cancelForm();render();updateBadges();
+}
+function submitTask(){
+  const text=document.getElementById('task-input').value.trim();
+  if(!text)return;
+  const note=document.getElementById('task-note').value.trim();
+  tasks.push({id:uid(),text,note,importance:newTask.importance,urgency:newTask.urgency,dueDate:newTask.dueDate,done:false,order:tasks.length});
+  save();cancelForm();render();updateBadges();
+}
+
+/* ── TASK ACTIONS ── */
+function toggleDone(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  const card=document.querySelector(`[data-id="${id}"]`);
+  if(card){card.classList.add('confetti-pop');setTimeout(()=>card.classList.remove('confetti-pop'),400);}
+  save();render();updateBadges();
+}
+function removeTask(id){
+  tasks=tasks.filter(x=>x.id!==id);
+  Object.keys(plan).forEach(k=>{if(plan[k]===id)delete plan[k];});
+  save();render();updateBadges();
+}
+function moveUp(id,quadId){
+  const items=quadItems(quadId);
+  const idx=items.findIndex(t=>t.id===id);
+  if(idx<=0)return;
+  swapOrder(items[idx],items[idx-1]);
+  save();render();
+}
+function moveDown(id,quadId){
+  const items=quadItems(quadId);
+  const idx=items.findIndex(t=>t.id===id);
+  if(idx<0||idx>=items.length-1)return;
+  swapOrder(items[idx],items[idx+1]);
+  save();render();
+}
+function swapOrder(a,b){const tmp=a.order;a.order=b.order;b.order=tmp;}
+function quadItems(quadId){
+  return tasks.filter(t=>!t.done&&getQuad(t).id===quadId)
+    .sort((a,b)=>{
+      // overdue always floats to top, then manual order controls everything else
+      const ao=isOverdue(a.dueDate)?-1:0, bo=isOverdue(b.dueDate)?-1:0;
+      if(ao!==bo)return ao-bo;
+      return a.order-b.order;
+    });
+}
+function toggleCollapse(qid){
+  if(collapsed.has(qid))collapsed.delete(qid);else collapsed.add(qid);
+  save();render();
+}
+
+/* ── PILLS ── */
+function impPill(t){
+  const cls={'high':'pill-imp-high','medium':'pill-imp-med','low':'pill-imp-low'};
+  const lbl={'high':'⚡ High imp.','medium':'⚡ Medium imp.','low':'⚡ Low imp.'};
+  return`<span class="pill ${cls[t.importance]}">${lbl[t.importance]}</span>`;
+}
+function urgPill(t){
+  const cls={'high':'pill-urg-high','medium':'pill-urg-med','low':'pill-urg-low'};
+  const lbl={'high':'🔥 High urg.','medium':'🔥 Medium urg.','low':'🔥 Low urg.'};
+  return`<span class="pill ${cls[t.urgency]}">${lbl[t.urgency]}</span>`;
+}
+function duePill(t){
+  if(!t.dueDate)return`<span class="pill pill-nodate">No date</span>`;
+  const lbl=formatDueLabel(t.dueDate);
+  if(!lbl)return'';
+  return`<span class="pill ${lbl.cls}">${lbl.text}</span>`;
+}
+
+/* ── TASK CARD ── */
+function taskCard(t,quadId,isFirst,isLast,showRank=true){
+  const notePart=t.note?`<div class="task-note">${esc(t.note)}</div>`:'';
+  const overdueClass=!t.done&&isOverdue(t.dueDate)?' overdue':'';
+  const rankBtns=showRank?`<div class="task-rank">
+    <button class="rank-btn" onclick="moveUp('${t.id}','${quadId}')" ${isFirst?'disabled':''}>▲</button>
+    <button class="rank-btn" onclick="moveDown('${t.id}','${quadId}')" ${isLast?'disabled':''}>▼</button>
+  </div>`:'';
+  return`<div class="task-card${t.done?' done':''}${overdueClass}" data-id="${t.id}">
+    ${rankBtns}
+    <button class="task-check${t.done?' checked':''}" onclick="toggleDone('${t.id}')">${t.done?'✓':''}</button>
+    <div class="task-body">
+      <div class="task-text">${esc(t.text)}</div>
+      ${notePart}
+      <div class="task-pills">${impPill(t)}${urgPill(t)}${duePill(t)}</div>
+    </div>
+    <button class="task-del" onclick="removeTask('${t.id}')">✕</button>
+  </div>`;
+}
+
+/* ── MATRIX VIEW ── */
+function renderMatrix(){
+  if(!tasks.filter(pending).length){
+    return`<div class="empty-state"><div class="empty-icon">🎉</div><h3>All clear!</h3><p>No pending tasks. Add something above to get started.</p></div>`;
+  }
+  let html='';
+  QUADS.forEach(q=>{
+    const items=quadItems(q.id);
+    const col=collapsed.has(q.id);
+    const cardsHtml=items.length===0
+      ?`<div class="q-empty">Nothing here — tasks land here based on their importance & urgency ratings.</div>`
+      :items.map((t,i)=>taskCard(t,q.id,i===0,i===items.length-1)).join('');
+    html+=`<div class="quadrant">
+      <div class="q-header" onclick="toggleCollapse('${q.id}')">
+        <span class="q-dot" style="background:${q.dot}"></span>
+        <span class="q-title">${q.label}</span>
+        <span class="q-sub">${q.sub}</span>
+        <span class="q-count">${items.length}</span>
+        <span class="q-arrow${col?' collapsed':''}">▾</span>
+      </div>
+      <div class="q-body${col?' hidden':''}">${cardsHtml}</div>
+    </div>`;
+  });
+  return html;
+}
+
+/* ── TODAY VIEW ── */
+function renderToday(){
+  // Get ALL today's tasks (done + pending) for accurate % calculation
+  const allToday=tasks.filter(t=>isDueToday(t.dueDate)||isOverdue(t.dueDate));
+  const doneToday=allToday.filter(t=>t.done).length;
+  const total=allToday.length;
+  const pct=total>0?Math.round(doneToday/total*100):0;
+
+  // Only show pending tasks in the list (done tasks stay in Done tab)
+  const todayTasks=allToday.filter(t=>!t.done)
+    .sort((a,b)=>{
+      if(isOverdue(a.dueDate)&&!isOverdue(b.dueDate))return -1;
+      if(!isOverdue(a.dueDate)&&isOverdue(b.dueDate))return 1;
+      const qA=QUADS.findIndex(q=>q.id===getQuad(a).id);
+      const qB=QUADS.findIndex(q=>q.id===getQuad(b).id);
+      return qA-qB||a.order-b.order;
+    });
+  const focusBox=`<div class="focus-header">
+    <div class="focus-title">Today's Focus</div>
+    <div class="focus-sub">${formatDate()}</div>
+    ${total>0?`<div class="focus-stat"><strong>${total-doneToday}</strong> task${total-doneToday!==1?'s':''} remaining &nbsp;·&nbsp; ${pct}% done</div>`:''}
+  </div>`;
+  if(!todayTasks.length){
+    return focusBox+`<div class="empty-state"><div class="empty-icon">☀️</div><h3>Nothing due today</h3><p>Set a due date of "today" on any task and it'll appear here.</p></div>`;
+  }
+  const overdueOnes=todayTasks.filter(t=>isOverdue(t.dueDate)&&!t.done);
+  const todayOnes=todayTasks.filter(t=>!isOverdue(t.dueDate)||t.done);
+  let html='';
+  if(overdueOnes.length){
+    html+=`<div class="section-label" style="color:var(--red)">⚠️ Overdue</div>`;
+    html+=`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${overdueOnes.map(t=>taskCard(t,getQuad(t).id,false,false,false)).join('')}</div>`;
+  }
+  if(todayOnes.length){
+    if(overdueOnes.length)html+=`<div class="section-label">Due today</div>`;
+    html+=`<div style="display:flex;flex-direction:column;gap:6px">${todayOnes.map(t=>taskCard(t,getQuad(t).id,false,false,false)).join('')}</div>`;
+  }
+  return focusBox+html;
+}
+
+/* ── PLAN VIEW ── */
+function renderPlan(){
+  const pt=tasks.filter(pending).sort((a,b)=>{
+    const qA=QUADS.findIndex(q=>q.id===getQuad(a).id);
+    const qB=QUADS.findIndex(q=>q.id===getQuad(b).id);
+    return qA-qB||a.order-b.order;
+  });
+  const opts=pt.map(t=>`<option value="${t.id}">${esc(t.text.slice(0,60))}${t.text.length>60?'…':''}</option>`).join('');
+  const slots=TIME_SLOTS.map((slot,i)=>`<div class="time-slot">
+    <span class="time-label">${slot.label}<br><small style="font-weight:400;color:var(--text3)">${slot.sub}</small></span>
+    <select class="time-drop" onchange="setPlan(${i},this.value)">
+      <option value="">— free —</option>${opts}
+    </select>
+  </div>`).join('');
+  let html=`<div class="plan-section">
+    <div class="plan-title">📆 Plan Your Day</div>
+    <div class="time-slots">${slots}</div>
+  </div>`;
+  const planned=Object.values(plan).filter(Boolean);
+  if(planned.length){
+    html+=`<div class="section-label">Planned tasks</div><div style="display:flex;flex-direction:column;gap:6px">`;
+    planned.forEach(id=>{const t=tasks.find(x=>x.id===id);if(t)html+=taskCard(t,getQuad(t).id,false,false,false);});
+    html+=`</div>`;
+  } else if(!pt.length){
+    html+=`<div class="empty-state"><div class="empty-icon">✅</div><h3>No tasks to plan</h3><p>Add some tasks first, then come back to plan your day.</p></div>`;
+  }
+  return html;
+}
+
+/* ── DONE VIEW ── */
+function renderDone(){
+  const done=tasks.filter(t=>t.done).reverse();
+  if(!done.length)return`<div class="empty-state"><div class="empty-icon">🏆</div><h3>Nothing completed yet</h3><p>Tick off tasks to see them here. You've got this!</p></div>`;
+  return`<div class="done-list">${done.map(t=>taskCard(t,'',false,false,false)).join('')}</div>`;
+}
+
+/* ── PLAN SETTER ── */
+function setPlan(slot,taskId){
+  if(taskId)plan[slot]=taskId;else delete plan[slot];
+  save();
+  setTimeout(()=>document.querySelectorAll('.time-drop').forEach((sel,i)=>{sel.value=plan[i]||'';}),10);
+}
+
+/* ── RENDER ── */
+function render(){
+  const el=document.getElementById('main-content');
+  if(view==='matrix')el.innerHTML=renderMatrix();
+  else if(view==='today')el.innerHTML=renderToday();
+  else if(view==='plan')el.innerHTML=renderPlan();
+  else el.innerHTML=renderDone();
+  if(view==='plan')setTimeout(()=>document.querySelectorAll('.time-drop').forEach((sel,i)=>{sel.value=plan[i]||'';}),10);
+  updateBadges();
+}
+
+/* ── INIT ── */
+document.getElementById('header-date').textContent=formatDate();
+load();
+render();
+refreshFormOpts();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cancelForm();});
+</script>
+</body>
+</html>

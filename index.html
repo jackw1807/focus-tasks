@@ -272,7 +272,21 @@ body{font-family:var(--font-body);color:var(--text);font-size:14px;line-height:1
 .focus-stat{margin-top:14px;font-size:13px;opacity:.85;font-weight:500}
 .focus-stat strong{font-size:20px;font-weight:700;font-family:var(--font-display);opacity:1;margin-right:4px}
 
-/* PLAN VIEW */
+.chip-rename-input{padding:4px 10px;border:1.5px solid var(--accent);border-radius:99px;background:var(--surface);font-family:var(--font-body);font-size:13px;color:var(--text);outline:none;width:120px}
+.chip-edit-btn{font-size:11px;opacity:0;cursor:pointer;background:none;border:none;color:inherit;padding:0 0 0 2px;line-height:1;transition:opacity .15s}
+.project-chip.active:hover .chip-edit-btn{opacity:.8}
+.chip-edit-btn:hover{opacity:1!important}
+
+/* LIST PICKER POPOVER */
+.list-pop{position:fixed;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:8px;box-shadow:var(--shadow-lg);z-index:300;min-width:150px;display:none;animation:fadeIn .15s ease}
+.list-pop.open{display:block}
+.list-pop-item{width:100%;padding:8px 12px;border:none;background:none;text-align:left;font-family:var(--font-body);font-size:13px;color:var(--text2);cursor:pointer;border-radius:var(--r);transition:all .15s;display:flex;align-items:center;gap:8px}
+.list-pop-item:hover{background:var(--surface2);color:var(--text)}
+.list-pop-item.active{color:var(--accent);font-weight:600}
+.list-pop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* PLAN SECTION LABEL */
+.plan-tasks-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin:20px 0 10px;padding:0 2px}
 .plan-section{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:22px}
 .plan-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:14px}
 .time-slots{display:flex;flex-direction:column;gap:12px}
@@ -444,6 +458,11 @@ body{font-family:var(--font-body);color:var(--text);font-size:14px;line-height:1
     <div class="form-field"><label class="form-label">📝 Notes</label><textarea id="edit-note" rows="2" placeholder="Any extra context…"></textarea></div>
     <div class="form-divider"></div>
     <div class="form-field" style="margin-bottom:0">
+      <label class="form-label">📁 List</label>
+      <select id="edit-project" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:var(--font-body);font-size:14px;color:var(--text);outline:none;appearance:none"></select>
+    </div>
+    <div class="form-divider"></div>
+    <div class="form-field" style="margin-bottom:0">
       <label class="form-label">⚡ Importance</label>
       <div class="opt-group">
         <button class="opt" id="edit-imp-high" onclick="setEditProp('importance','high')">🔴 High</button>
@@ -485,6 +504,9 @@ body{font-family:var(--font-body);color:var(--text);font-size:14px;line-height:1
   </div>
   <div class="cal-grid" id="cal-grid"></div>
 </div>
+
+<!-- LIST PICKER POPOVER -->
+<div class="list-pop" id="list-pop"></div>
 
 <script>
 /* ── SUPABASE ── */
@@ -539,6 +561,7 @@ let addingProject=false;
 let editingId=null;
 let editState={};
 let datePopTaskId=null;
+let renamingProject=null;
 // theme
 let theme={dark:false,globalAccent:'#4a7c59',projectColors:{}};
 
@@ -598,9 +621,13 @@ function toggleSettings(e){
 }
 
 /* ── DATE CALENDAR PICKER ── */
-let calViewYear=0,calViewMonth=0;
+let calViewYear=0,calViewMonth=0,datePopHandler=null;
 
 function openDatePop(taskId,el){
+  // Close list pop if open
+  closeListPop();
+  // Clear any existing outside handler
+  if(datePopHandler){document.removeEventListener('mousedown',datePopHandler);datePopHandler=null;}
   datePopTaskId=taskId;
   const t=tasks.find(x=>x.id===taskId);
   const now=new Date();
@@ -608,29 +635,32 @@ function openDatePop(taskId,el){
   else{calViewYear=now.getFullYear();calViewMonth=now.getMonth();}
   renderCal();
   const pop=document.getElementById('date-pop');
-  pop.classList.add('open');
-  // Measure after making visible so width is correct at any zoom level
+  // Measure while hidden so zoom level is respected
+  pop.style.visibility='hidden';
+  pop.style.display='block';
   const r=el.getBoundingClientRect();
-  const popW=pop.offsetWidth||280;
-  const popH=pop.offsetHeight||270;
-  let top=r.bottom+6;
-  let left=r.left;
-  // flip above if off bottom
-  if(top+popH>window.innerHeight-12)top=r.top-popH-6;
-  // clamp horizontally
+  const popW=pop.offsetWidth||260;
+  const popH=pop.offsetHeight||260;
+  let top=r.bottom+8,left=r.left;
+  if(top+popH>window.innerHeight-8)top=r.top-popH-8;
   if(left+popW>window.innerWidth-8)left=window.innerWidth-popW-8;
   if(left<8)left=8;
-  pop.style.top=top+'px';
-  pop.style.left=left+'px';
-  setTimeout(()=>document.addEventListener('click',closeDatePopOutside,{once:true}),10);
+  pop.style.top=top+'px';pop.style.left=left+'px';
+  pop.style.visibility='';
+  pop.classList.add('open');
+  // Reliable outside-click detection via mousedown
+  setTimeout(()=>{
+    datePopHandler=(e)=>{if(!pop.contains(e.target)){closeDatePop();}};
+    document.addEventListener('mousedown',datePopHandler);
+  },120);
 }
 function closeDatePop(){
-  document.getElementById('date-pop').classList.remove('open');
+  const pop=document.getElementById('date-pop');
+  if(!pop)return;
+  pop.classList.remove('open');
+  pop.style.display='';
   datePopTaskId=null;
-}
-function closeDatePopOutside(e){
-  if(!document.getElementById('date-pop').contains(e.target))closeDatePop();
-  else setTimeout(()=>document.addEventListener('click',closeDatePopOutside,{once:true}),10);
+  if(datePopHandler){document.removeEventListener('mousedown',datePopHandler);datePopHandler=null;}
 }
 function calNav(dir){
   calViewMonth+=dir;
@@ -650,29 +680,18 @@ function renderCal(){
   const daysInMonth=new Date(calViewYear,calViewMonth+1,0).getDate();
   const daysInPrev=new Date(calViewYear,calViewMonth,0).getDate();
   let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  // prev month tail
-  for(let i=startDow-1;i>=0;i--){
-    html+=`<div class="cal-day other-month"><div class="cal-day-inner">${daysInPrev-i}</div></div>`;
-  }
-  // current month
+  for(let i=startDow-1;i>=0;i--)html+=`<div class="cal-day other-month"><div class="cal-day-inner">${daysInPrev-i}</div></div>`;
   for(let d=1;d<=daysInMonth;d++){
     const ds=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday=ds===today;
-    const isSel=ds===selDate;
-    const isPast=ds<today&&!isToday;
+    const isToday=ds===today,isSel=ds===selDate,isPast=ds<today&&!isToday;
     let cls='cal-day';
-    if(isSel)cls+=' selected';
-    else if(isToday)cls+=' today';
+    if(isSel)cls+=' selected';else if(isToday)cls+=' today';
     if(isPast&&!isSel)cls+=' past';
     html+=`<div class="${cls}" onclick="calPickDate('${ds}')"><div class="cal-day-inner">${d}</div></div>`;
   }
-  // next month fill
   const total=startDow+daysInMonth;
   const remaining=(7-total%7)%7;
-  for(let d=1;d<=remaining;d++){
-    html+=`<div class="cal-day other-month"><div class="cal-day-inner">${d}</div></div>`;
-  }
-  // no date
+  for(let d=1;d<=remaining;d++)html+=`<div class="cal-day other-month"><div class="cal-day-inner">${d}</div></div>`;
   html+=`<div class="cal-no-date" onclick="calPickDate(null)">✕ No date</div>`;
   document.getElementById('cal-grid').innerHTML=html;
 }
@@ -685,6 +704,92 @@ async function calPickDate(dateStr){
   setSyncStatus('syncing','Saving…');
   await dbUpdate(t);
   setSyncStatus('ok','Saved');setTimeout(()=>setSyncStatus('',''),2000);
+}
+
+/* ── LIST PICKER POPOVER ── */
+let listPopTaskId=null,listPopHandler=null;
+
+function openListPop(taskId,el){
+  closeDatePop();
+  if(listPopHandler){document.removeEventListener('mousedown',listPopHandler);listPopHandler=null;}
+  listPopTaskId=taskId;
+  const t=tasks.find(x=>x.id===taskId);
+  const pop=document.getElementById('list-pop');
+  pop.innerHTML=projects.map(p=>{
+    const col=theme.projectColors[p]||theme.globalAccent;
+    const isActive=p===t?.project;
+    return`<button class="list-pop-item${isActive?' active':''}" onclick="pickList('${esc(p)}')">
+      <span class="list-pop-dot" style="background:${col}"></span>${esc(p)}
+    </button>`;
+  }).join('');
+  pop.style.visibility='hidden';
+  pop.style.display='block';
+  const r=el.getBoundingClientRect();
+  const popW=pop.offsetWidth||160;
+  const popH=pop.offsetHeight||100;
+  let top=r.bottom+8,left=r.left;
+  if(top+popH>window.innerHeight-8)top=r.top-popH-8;
+  if(left+popW>window.innerWidth-8)left=window.innerWidth-popW-8;
+  if(left<8)left=8;
+  pop.style.top=top+'px';pop.style.left=left+'px';
+  pop.style.visibility='';
+  pop.classList.add('open');
+  setTimeout(()=>{
+    listPopHandler=(e)=>{if(!pop.contains(e.target)){closeListPop();}};
+    document.addEventListener('mousedown',listPopHandler);
+  },120);
+}
+function closeListPop(){
+  const pop=document.getElementById('list-pop');
+  if(!pop)return;
+  pop.classList.remove('open');
+  pop.style.display='';
+  listPopTaskId=null;
+  if(listPopHandler){document.removeEventListener('mousedown',listPopHandler);listPopHandler=null;}
+}
+async function pickList(projectName){
+  if(!listPopTaskId)return;
+  const t=tasks.find(x=>x.id===listPopTaskId);
+  if(!t)return closeListPop();
+  t.project=projectName;
+  closeListPop();render();updateBadges();
+  setSyncStatus('syncing','Saving…');
+  await dbUpdate(t);
+  setSyncStatus('ok','Saved');setTimeout(()=>setSyncStatus('',''),2000);
+}
+
+/* ── PROJECT RENAME ── */
+function startRename(e,p){
+  e.stopPropagation();
+  renamingProject=p;
+  renderProjectsBar();
+  setTimeout(()=>document.getElementById('rename-input')?.select(),50);
+}
+function handleRenameKey(e){
+  if(e.key==='Enter')confirmRename();
+  if(e.key==='Escape'){renamingProject=null;renderProjectsBar();}
+}
+async function confirmRename(){
+  const input=document.getElementById('rename-input');
+  const newName=input?.value.trim();
+  if(!newName||newName===renamingProject){renamingProject=null;renderProjectsBar();return;}
+  if(projects.includes(newName)){renamingProject=null;renderProjectsBar();return;}
+  // Update project list
+  const idx=projects.indexOf(renamingProject);
+  if(idx>-1)projects[idx]=newName;
+  // Update project colours
+  if(theme.projectColors[renamingProject]){theme.projectColors[newName]=theme.projectColors[renamingProject];delete theme.projectColors[renamingProject];}
+  // Update all tasks in this project
+  const affected=tasks.filter(t=>t.project===renamingProject);
+  affected.forEach(t=>t.project=newName);
+  if(activeProject===renamingProject)activeProject=newName;
+  renamingProject=null;
+  saveProjects();saveTheme();
+  // Save affected tasks to Supabase
+  setSyncStatus('syncing','Saving…');
+  await Promise.all(affected.map(t=>dbUpdate(t)));
+  setSyncStatus('ok','Saved');setTimeout(()=>setSyncStatus('',''),2000);
+  applyTheme();render();updateBadges();
 }
 
 /* ── AUTH ── */
@@ -827,8 +932,15 @@ function renderProjectsBar(){
     const col=theme.projectColors[p]||theme.globalAccent;
     const isActive=p===activeProject;
     const style=isActive?`background:${col};border-color:${col}`:``;
+    if(renamingProject===p){
+      return`<div class="project-chip active" style="${style}">
+        <input class="chip-rename-input" id="rename-input" value="${esc(p)}" maxlength="30"
+          onkeydown="handleRenameKey(event)" onblur="confirmRename()" onclick="event.stopPropagation()"/>
+      </div>`;
+    }
     return`<div class="project-chip${isActive?' active':''}" style="${style}" onclick="setProject('${esc(p)}')">
       ${esc(p)}
+      ${isActive?`<button class="chip-edit-btn" onclick="startRename(event,'${esc(p)}')" title="Rename">✏️</button>`:''}
       ${projects.length>1&&!isActive?`<span class="chip-del" onclick="deleteProject(event,'${esc(p)}')">✕</span>`:''}
     </div>`;
   }).join('');
@@ -960,6 +1072,9 @@ function openEdit(id){
   document.getElementById('edit-text').value=t.text;
   document.getElementById('edit-note').value=t.note||'';
   document.getElementById('edit-due').value=t.dueDate||'';
+  // populate list selector
+  const sel=document.getElementById('edit-project');
+  sel.innerHTML=projects.map(p=>`<option value="${esc(p)}"${p===t.project?' selected':''}>${esc(p)}</option>`).join('');
   refreshFormOpts('edit-');
   document.getElementById('edit-overlay').classList.remove('hidden');
   document.getElementById('edit-text').focus();
@@ -973,8 +1088,9 @@ async function saveEdit(){
   const text=document.getElementById('edit-text').value.trim();if(!text)return;
   const note=document.getElementById('edit-note').value.trim();
   const due=document.getElementById('edit-due').value||null;
+  const project=document.getElementById('edit-project').value||activeProject;
   const t=tasks.find(x=>x.id===editingId);if(!t)return;
-  t.text=text;t.note=note;t.importance=editState.importance;t.urgency=editState.urgency;t.dueDate=due;
+  t.text=text;t.note=note;t.importance=editState.importance;t.urgency=editState.urgency;t.dueDate=due;t.project=project;
   closeEdit();render();updateBadges();
   setSyncStatus('syncing','Saving…');
   await dbUpdate(t);
@@ -1058,9 +1174,8 @@ function taskCard(t,quadId,isFirst,isLast,showRank=true){
 }
 
 function listPill(t){
-  if(activeProject!=='__all__')return'';
   const col=theme.projectColors[t.project]||theme.globalAccent;
-  return`<span class="pill" style="background:${col}22;color:${col};border:1px solid ${col}55">📁 ${esc(t.project)}</span>`;
+  return`<span class="pill clickable" style="background:${col}22;color:${col};border:1px solid ${col}55" onclick="openListPop('${t.id}',this)">📁 ${esc(t.project)}</span>`;
 }
 function renderMatrix(){
   if(!projectTasks().filter(pending).length)return`<div class="empty-state"><div class="empty-icon">🎉</div><h3>All clear!</h3><p>No pending tasks in <strong>${esc(activeProject)}</strong>. Add one above.</p></div>`;
@@ -1134,6 +1249,14 @@ function renderPlan(){
   }).join('');
   let html=`<div class="plan-section"><div class="plan-title">📆 Plan Your Day</div><div class="time-slots">${slotsHtml}</div></div>`;
   if(!pt.length)html+=`<div class="empty-state"><div class="empty-icon">✅</div><h3>No tasks to plan</h3><p>Add some tasks first.</p></div>`;
+
+  // Planned task cards at the bottom to tick off
+  const allPlannedIds=[...new Set(Object.values(plan).flat())];
+  const plannedTasks=allPlannedIds.map(id=>tasks.find(x=>x.id===id)).filter(Boolean);
+  if(plannedTasks.length){
+    html+=`<div class="plan-tasks-label">✅ Tick off as you go</div>`;
+    html+=`<div style="display:flex;flex-direction:column;gap:6px">${plannedTasks.map(t=>taskCard(t,getQuad(t).id,false,false,false)).join('')}</div>`;
+  }
   return html;
 }
 function renderDone(){
@@ -1160,7 +1283,7 @@ document.addEventListener('click',e=>{
   if(!document.getElementById('settings-anchor').contains(e.target))
     document.getElementById('settings-panel').classList.remove('open');
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){cancelForm();closeEdit();closeDatePop();document.getElementById('settings-panel').classList.remove('open');}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cancelForm();closeEdit();closeDatePop();closeListPop();document.getElementById('settings-panel').classList.remove('open');}});
 refreshFormOpts();
 </script>
 </body>
